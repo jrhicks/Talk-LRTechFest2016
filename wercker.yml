@@ -62,11 +62,6 @@ deploy-ruby:
       cwd: $WERCKER_SOURCE_DIR/k8s
 
     - script:
-      name: Install Bundler
-      cwd: $WERCKER_SOURCE_DIR/RubyService
-      code: gem install bundler
-
-    - script:
       name: Install Gems
       cwd: $WERCKER_SOURCE_DIR/RubyService
       code: bundle install
@@ -78,7 +73,7 @@ deploy-ruby:
       username: _json_key
       password: $GCR_JSON_KEY_FILE
       working-dir: $WERCKER_SOURCE_DIR/RubyService
-      cmd: ruby app.rb
+      cmd: bundle exec ruby app.rb
 
     - kubectl:
       server: $K8_SERVER

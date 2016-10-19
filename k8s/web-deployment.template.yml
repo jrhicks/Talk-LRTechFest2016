@@ -1,9 +1,13 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: ${DEPLOYMENT_NAME}
+  name: ${SVC_NAME}-${DEPLOYMENT_NAME}
 spec:
   replicas: ${SVC_REPLICAS}
+  selector:
+    matchLabels:
+      name: ${SVC_NAME}
+      deployment: ${DEPLOYMENT_NAME}
   template:
     metadata:
       labels:
