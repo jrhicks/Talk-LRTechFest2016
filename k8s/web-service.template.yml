@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${SVC_NAME}
+spec:
+  type: LoadBalancer
+  selector:
+    name: ${SVC_NAME}
+  ports:
+    - name: "http"
+      port: 80
+      targetPort: ${SVC_PORT}

@@ -1,0 +1,108 @@
+box: node:4.2.6-slim
+
+deploy-node:
+  box: node:4.2.6-slim
+  steps:
+    - script:
+      name: Setting Public Environment Variables
+      code: source k8s/variables_public.env
+
+    - script:
+      name: Setting Private Environment Variables
+      code: source k8s/variables_private.env
+
+    - script:
+      name: Setting Deployment Name
+      code: export DEPLOYMENT_NAME=node
+
+    - script:
+      name: Install YARN
+      code: npm install -g yarn
+
+    - script:
+      name: Install YARN
+      cwd: $WERCKER_SOURCE_DIR/NodeService
+      code: yarn install
+
+    - bash-template:
+      cwd: $WERCKER_SOURCE_DIR/k8s
+
+    - internal/docker-push:
+      registry: https://gcr.io
+      repository: gcr.io/${GC_PROJECT}/${GC_REGISTRY_NAME}
+      tag: $WERCKER_GIT_BRANCH-$WERCKER_GIT_COMMIT-${DEPLOYMENT_NAME}
+      username: _json_key
+      password: $GCR_JSON_KEY_FILE
+      working-dir: $WERCKER_SOURCE_DIR/NodeService
+      cmd: node app.js
+
+    - kubectl:
+      server: $K8_SERVER
+      username: $K8_USERNAME
+      password: $K8_PASSWORD
+      insecure-skip-tls-verify: true
+      command: apply -f k8s/web-deployment.yml
+
+deploy-ruby:
+  box: ruby
+  steps:
+    - script:
+      name: Setting Public Environment Variables
+      code: source k8s/variables_public.env
+
+    - script:
+      name: Setting Private Environment Variables
+      code: source k8s/variables_private.env
+
+    - script:
+      name: Setting Deployment Name
+      code: export DEPLOYMENT_NAME=ruby
+
+    - bash-template:
+      cwd: $WERCKER_SOURCE_DIR/k8s
+
+    - script:
+      name: Install Bundler
+      cwd: $WERCKER_SOURCE_DIR/RubyService
+      code: gem install bundler
+
+    - script:
+      name: Install Gems
+      cwd: $WERCKER_SOURCE_DIR/RubyService
+      code: bundle install
+
+    - internal/docker-push:
+      registry: https://gcr.io
+      repository: gcr.io/${GC_PROJECT}/${GC_REGISTRY_NAME}
+      tag: $WERCKER_GIT_BRANCH-$WERCKER_GIT_COMMIT-${DEPLOYMENT_NAME}
+      username: _json_key
+      password: $GCR_JSON_KEY_FILE
+      working-dir: $WERCKER_SOURCE_DIR/RubyService
+      cmd: ruby app.rb
+
+    - kubectl:
+      server: $K8_SERVER
+      username: $K8_USERNAME
+      password: $K8_PASSWORD
+      insecure-skip-tls-verify: true
+      command: apply -f k8s/web-deployment.yml
+
+expose-service:
+  steps:
+    - script:
+      name: Set Public Variables
+      code: source k8s/variables_public.env
+
+    - script:
+      name: Set Private Variables
+      code: source k8s/variables_private.env
+
+    - bash-template:
+      cwd: $WERCKER_SOURCE_DIR/k8s
+
+    - kubectl:
+      server: $K8_SERVER
+      username: $K8_USERNAME
+      password: $K8_PASSWORD
+      insecure-skip-tls-verify: true
+      command: create -f k8s/web-service.yml

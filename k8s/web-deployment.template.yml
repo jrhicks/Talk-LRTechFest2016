@@ -1,0 +1,19 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ${DEPLOYMENT_NAME}
+spec:
+  replicas: ${SVC_REPLICAS}
+  template:
+    metadata:
+      labels:
+        name: ${SVC_NAME}
+        deployment: ${DEPLOYMENT_NAME}
+    spec:
+      containers:
+        - name: ${DEPLOYMENT_NAME}
+          image: gcr.io/${GC_PROJECT}/${GC_REGISTRY_NAME}:${WERCKER_GIT_BRANCH}-${WERCKER_GIT_COMMIT}-${DEPLOYMENT_NAME}
+          imagePullPolicy: Always
+          ports:
+          - name: 'http'
+            containerPort: ${SVC_PORT}
