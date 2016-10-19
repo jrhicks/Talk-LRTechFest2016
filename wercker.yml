@@ -1,5 +1,66 @@
 box: node:4.2.6-slim
 
+dev:
+  box: php
+  steps:
+    - install-packages:
+        packages: git
+    - script:
+        name: install composer
+        code: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+    - script:
+        name: install dependencies
+        code: composer install --no-interaction
+        cwd: $WERCKER_SOURCE_DIR/PHPService
+
+    - internal/watch:
+        code: php -S 0.0.0.0:8000
+        reload: true
+        cwd: $WERCKER_SOURCE_DIR/PHPService
+
+deploy-php:
+  box: php
+  steps:
+    - script:
+      name: Setting Public Environment Variables
+      code: source k8s/variables_public.env
+
+    - script:
+      name: Setting Private Environment Variables
+      code: source k8s/variables_private.env
+
+    - script:
+      name: Setting Deployment Name
+      code: export DEPLOYMENT_NAME=node
+
+    - install-packages:
+        packages: git
+
+    - script:
+        name: install composer
+        code: curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
+
+    - script:
+        name: install dependencies
+        code: composer install --no-interaction
+        cwd: $WERCKER_SOURCE_DIR/PHPService
+
+    - internal/docker-push:
+      registry: https://gcr.io
+      repository: gcr.io/${GC_PROJECT}/${GC_REGISTRY_NAME}
+      tag: $WERCKER_GIT_BRANCH-$WERCKER_GIT_COMMIT-${DEPLOYMENT_NAME}
+      username: _json_key
+      password: $GCR_JSON_KEY_FILE
+      working-dir: $WERCKER_SOURCE_DIR/NodeService
+      cmd: php -S 0.0.0.0:4567
+
+    - kubectl:
+      server: $K8_SERVER
+      username: $K8_USERNAME
+      password: $K8_PASSWORD
+      insecure-skip-tls-verify: true
+      command: apply -f k8s/web-deployment.yml
+
 deploy-node:
   box: node:4.2.6-slim
   steps:
