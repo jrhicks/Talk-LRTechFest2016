@@ -1,3 +1,4 @@
 wercker
 variables_private.env
 .wercker
+*.lock
